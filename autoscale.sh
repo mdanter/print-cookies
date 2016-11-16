@@ -1,6 +1,7 @@
 #!/bin/bash
 #
-set -x
+#set -x
+[ $# -eq 0 ] && { echo "Usage: $0 -d <dc> -n <project>"; exit 1; }
 
 while [[ $# -gt 1 ]]
 do
@@ -30,7 +31,7 @@ while read POD IP PHASE ; do
     PORT=$(oc get service $DC -o jsonpath='{range .spec}{.ports[0].targetPort}
 {end}')
 
-    CURRENT=$(curl -q -s http://$IP:$PORT/get-metrics/)
+    CURRENT=$(curl -q -s -o - http://$IP:$PORT/get-metrics/)
     TOTAL=$(($TOTAL + $CURRENT))
 done
 
