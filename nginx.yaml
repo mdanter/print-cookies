@@ -50,6 +50,7 @@ items:
         containers:
         - image: nginx
           name: nginx
+          terminationGracePeriodSeconds: 60
           ports:
           - containerPort: 443
             protocol: TCP
