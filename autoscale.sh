@@ -27,21 +27,23 @@ TOTAL=0
 oc get pods -o jsonpath='{range .items[*]}{.metadata.name} {.status.podIP} {.status.phase}
 {end}' -n ${PROJECT} | egrep "^${DC}-.-..... .*Running$" | \
 while read POD IP PHASE ; do
-    TOTAL=$(($TOTAL + 0$( curl -q -s -o - http://$IP/get-metrics ) ))
+    PORT=$(oc get service $DC -o jsonpath='{range .spec}{.ports[0].targetPort}
+{end}')
+
+    CURRENT=$(curl -q -s http://$IP:$PORT/get-metrics/)
+    TOTAL=$(($TOTAL + $CURRENT))
 done
 
 
 # Arbitrary formula to calculate required number of replicas
 NEEDED=$(( 3 + (($TOTAL-1)/2) ))
 
-#
+# Get the current replica count
 CURRENT=$(oc get dc $DC -o jsonpath='{.spec.replicas}' -n $PROJECT)
-
 
 # To avoid thrashing only scale-up
 [ $NEEDED -ne $CURRENT ] && echo Replicas Current: $CURRENT Desired: $NEEDED
 
-RC=$(oc get rc -n $PROJECT -o jsonpath='{range .items[*]}{.metadata.name}
-{end}' | egrep "^$DC-.*")
-
-echo "oc scale rc ${RC} --replicas=${NEEDED} -n ${PROJECT}"
+echo "oc scale dc/${DC} --replicas=${NEEDED} -n ${PROJECT}"
+# this will actually change the replicas, uncomment if needed
+#oc scale dc/${DC} --replicas=${NEEDED} -n ${PROJECT}
